@@ -1344,7 +1344,9 @@ exports.restyle = function restyle(gd, astr, val, _traces) {
     } else {
         seq.push(Plots.previousPromises);
 
+        console.time('supply')
         Plots.supplyDefaults(gd);
+        console.timeEnd('supply')
 
         if(flags.style) seq.push(subroutines.doTraceStyle);
         if(flags.colorbars) seq.push(subroutines.doColorBars);

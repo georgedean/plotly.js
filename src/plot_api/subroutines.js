@@ -445,17 +445,25 @@ exports.drawMainTitle = function(gd) {
 // supplyDefaults brought in an array that was already
 // in gd.data but not in gd._fullData previously
 exports.doTraceStyle = function(gd) {
-    for(var i = 0; i < gd.calcdata.length; i++) {
-        var cdi = gd.calcdata[i],
-            _module = ((cdi[0] || {}).trace || {})._module || {},
-            arraysToCalcdata = _module.arraysToCalcdata;
+    console.time('doTraceStyle')
 
-        if(arraysToCalcdata) arraysToCalcdata(cdi, cdi[0].trace);
+    for(var i = 0; i < gd.calcdata.length; i++) {
+        var cd = gd.calcdata[i];
+        var cd0 = cd[0] || {};
+        var trace = cd0.trace || {};
+        var _module = trace._module || {};
+
+        var arraysToCalcdata = _module.arraysToCalcdata;
+        if(arraysToCalcdata) arraysToCalcdata(cd, trace);
+
+        var editStyle = _module.editStyle;
+        if(editStyle) editStyle(gd, cd0);
     }
 
     Plots.style(gd);
     Registry.getComponentMethod('legend', 'draw')(gd);
 
+    console.timeEnd('doTraceStyle')
     return Plots.previousPromises(gd);
 };
 

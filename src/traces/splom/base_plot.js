@@ -57,7 +57,7 @@ function drag(gd) {
 function dragOne(gd, trace, stash, scene) {
     var visibleLength = scene.matrixOptions.data.length;
     var visibleDims = stash.visibleDims;
-    var ranges = new Array(visibleLength);
+    var ranges = scene.viewOpts.ranges = new Array(visibleLength);
 
     for(var k = 0; k < visibleDims.length; k++) {
         var i = visibleDims[k];

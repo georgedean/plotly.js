@@ -28,6 +28,7 @@ var BADNUM = require('../../constants/numerical').BADNUM;
 var TOO_MANY_POINTS = require('../scattergl/constants').TOO_MANY_POINTS;
 
 function calc(gd, trace) {
+    console.time('calc')
     var dimensions = trace.dimensions;
     var commonLength = trace._length;
     var stash = {};
@@ -87,23 +88,21 @@ function calc(gd, trace) {
     var visibleLength = cdata.length;
     var hasTooManyPoints = (visibleLength * commonLength) > TOO_MANY_POINTS;
 
+    // Reuse SVG scatter axis expansion routine.
+    // For graphs with very large number of points and array marker.size,
+    // use average marker size instead to speed things up.
+    var ppad;
+    if(hasTooManyPoints) {
+        ppad = 2 * (opts.sizeAvg || Math.max(opts.size, 3));
+    } else {
+        ppad = calcMarkerSize(trace, commonLength);
+    }
+
     for(k = 0; k < visibleDims.length; k++) {
         i = visibleDims[k];
         dim = dimensions[i];
-
         xa = AxisIDs.getFromId(gd, trace._diag[i][0]) || {};
         ya = AxisIDs.getFromId(gd, trace._diag[i][1]) || {};
-
-        // Reuse SVG scatter axis expansion routine.
-        // For graphs with very large number of points and array marker.size,
-        // use average marker size instead to speed things up.
-        var ppad;
-        if(hasTooManyPoints) {
-            ppad = 2 * (opts.sizeAvg || Math.max(opts.size, 3));
-        } else {
-            ppad = calcMarkerSize(trace, commonLength);
-        }
-
         calcAxisExpansion(gd, trace, xa, ya, cdata[k], cdata[k], ppad);
     }
 
@@ -114,6 +113,7 @@ function calc(gd, trace) {
     scene.selectedOptions = convertMarkerSelection(trace, trace.selected);
     scene.unselectedOptions = convertMarkerSelection(trace, trace.unselected);
 
+    console.timeEnd('calc')
     return [{x: false, y: false, t: stash, trace: trace}];
 }
 
@@ -174,6 +174,7 @@ function plot(gd, _, splomCalcData) {
 }
 
 function plotOne(gd, cd0) {
+    console.time('plot')
     var fullLayout = gd._fullLayout;
     var gs = fullLayout._size;
     var trace = cd0.trace;
@@ -196,7 +197,7 @@ function plotOne(gd, cd0) {
 
     var visibleDims = stash.visibleDims;
     var visibleLength = cdata.length;
-    var viewOpts = {};
+    var viewOpts = scene.viewOpts = {};
     viewOpts.ranges = new Array(visibleLength);
     viewOpts.domains = new Array(visibleLength);
 
@@ -225,9 +226,11 @@ function plotOne(gd, cd0) {
 
     viewOpts.viewport = [gs.l, gs.b, gs.w + gs.l, gs.h + gs.b];
 
+    console.time('create')
     if(scene.matrix === true) {
         scene.matrix = createMatrix(regl);
     }
+    console.timeEnd('create')
 
     var clickSelectEnabled = fullLayout.clickmode.indexOf('select') > -1;
     var selectMode = dragmode === 'lasso' || dragmode === 'select' ||
@@ -294,12 +297,39 @@ function plotOne(gd, cd0) {
         }
     }
     else {
-        scene.matrix.update(matrixOpts, null);
-        scene.matrix.update(viewOpts, null);
+        console.time('update')
+        var opts = Lib.extendFlat({}, matrixOpts, viewOpts);
+        scene.matrix.update(opts, null);
         stash.xpx = stash.ypx = null;
+        console.timeEnd('update')
     }
 
+    console.time('draw')
     scene.draw();
+    console.timeEnd('draw')
+
+    console.timeEnd('plot')
+}
+
+function editStyle(gd, cd0) {
+    console.time('editStyle')
+    var trace = cd0.trace;
+    var stash = cd0.t;
+    var scene = stash._scene;
+    var matrixOpts = scene.matrixOptions;
+    var viewOpts = scene.viewOpts;
+
+    var opts = Lib.extendFlat({}, matrixOpts, convertMarkerStyle(trace), viewOpts);
+
+    console.time('-update1')
+    scene.matrix.update(opts, null);
+    console.timeEnd('-update1')
+
+    console.time('-draw')
+    scene.draw();
+    console.timeEnd('-draw')
+
+    console.timeEnd('editStyle')
 }
 
 function hoverPoints(pointData, xval, yval) {
@@ -474,7 +504,8 @@ module.exports = {
     plot: plot,
     hoverPoints: hoverPoints,
     selectPoints: selectPoints,
-    style: style,
+    styleOnSelect: style,
+    editStyle: editStyle,
 
     meta: {
         description: [

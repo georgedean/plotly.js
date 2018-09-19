@@ -957,7 +957,7 @@ module.exports = {
     calc: calc,
     plot: plot,
     hoverPoints: hoverPoints,
-    style: style,
+    styleOnSelect: style,
     selectPoints: selectPoints,
 
     sceneOptions: sceneOptions,
