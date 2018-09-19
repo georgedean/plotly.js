@@ -447,6 +447,9 @@ exports.drawMainTitle = function(gd) {
 exports.doTraceStyle = function(gd) {
     console.time('doTraceStyle')
 
+    var fullLayout = gd._fullLayout;
+    var editStyleCalls = [];
+
     for(var i = 0; i < gd.calcdata.length; i++) {
         var cd = gd.calcdata[i];
         var cd0 = cd[0] || {};
@@ -457,7 +460,17 @@ exports.doTraceStyle = function(gd) {
         if(arraysToCalcdata) arraysToCalcdata(cd, trace);
 
         var editStyle = _module.editStyle;
-        if(editStyle) editStyle(gd, cd0);
+        if(editStyle) editStyleCalls.push(function() { editStyle(gd, cd0); });
+    }
+
+    // TODO regl-draw-queue!!!!
+
+    if(editStyleCalls.length) {
+        clearGlCanvases(gd);
+        if(fullLayout._hasOnlyLargeSploms) {
+            fullLayout._splomGrid.draw();
+        }
+        editStyleCalls.forEach(function(fn) { fn(); });
     }
 
     Plots.style(gd);
