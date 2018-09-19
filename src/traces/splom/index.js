@@ -319,7 +319,7 @@ function editStyle(gd, cd0) {
     var matrixOpts = scene.matrixOptions;
     var viewOpts = scene.viewOpts;
 
-
+    calcColorscales(trace);
     var opts = Lib.extendFlat({}, matrixOpts, convertMarkerStyle(trace), viewOpts);
     // TODO [un]selected styles
 
