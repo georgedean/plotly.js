@@ -735,6 +735,10 @@ describe('Test splom interactions:', function() {
         .catch(failTest)
         .then(done);
     });
+
+    it('@gl should trigger minimal sequence for axis range updates', function() {
+
+    });
 });
 
 describe('Test splom hover:', function() {
