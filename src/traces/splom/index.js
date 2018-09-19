@@ -118,6 +118,9 @@ function calc(gd, trace) {
 }
 
 function sceneUpdate(gd, stash) {
+    // TODO this is always undefined, as stash is cleared in _module.calc !!!
+    //
+    // maybe we should link _scene in fullData instead?
     var scene = stash._scene;
 
     var reset = {
