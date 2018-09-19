@@ -174,7 +174,7 @@ function plot(gd, _, splomCalcData) {
 }
 
 function plotOne(gd, cd0) {
-    console.time('plot')
+    console.time('plotOne')
     var fullLayout = gd._fullLayout;
     var gs = fullLayout._size;
     var trace = cd0.trace;
@@ -308,7 +308,7 @@ function plotOne(gd, cd0) {
     scene.draw();
     console.timeEnd('draw')
 
-    console.timeEnd('plot')
+    console.timeEnd('plotOne')
 }
 
 function editStyle(gd, cd0) {
@@ -319,7 +319,9 @@ function editStyle(gd, cd0) {
     var matrixOpts = scene.matrixOptions;
     var viewOpts = scene.viewOpts;
 
+
     var opts = Lib.extendFlat({}, matrixOpts, convertMarkerStyle(trace), viewOpts);
+    // TODO [un]selected styles
 
     console.time('-update1')
     scene.matrix.update(opts, null);

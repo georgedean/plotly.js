@@ -544,6 +544,7 @@ exports.doCamera = function(gd) {
 };
 
 exports.drawData = function(gd) {
+    console.time('drawData')
     var fullLayout = gd._fullLayout;
     var calcdata = gd.calcdata;
     var i;
@@ -574,6 +575,7 @@ exports.drawData = function(gd) {
     // Mark the first render as complete
     fullLayout._replotting = false;
 
+    console.timeEnd('drawData')
     return Plots.previousPromises(gd);
 };
 
