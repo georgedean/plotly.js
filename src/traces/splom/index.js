@@ -29,6 +29,7 @@ var TOO_MANY_POINTS = require('../scattergl/constants').TOO_MANY_POINTS;
 
 function calc(gd, trace) {
     console.time('calc')
+    var fullLayout = gd._fullLayout;
     var dimensions = trace.dimensions;
     var commonLength = trace._length;
     var opts = {};
@@ -105,7 +106,7 @@ function calc(gd, trace) {
         calcAxisExpansion(gd, trace, xa, ya, cdata[k], cdata[k], ppad);
     }
 
-    var scene = trace._scene = sceneUpdate(gd, trace);
+    var scene = sceneUpdate(gd, trace);
     if(!scene.matrix) scene.matrix = true;
     scene.matrixOptions = opts;
 
@@ -117,14 +118,18 @@ function calc(gd, trace) {
 }
 
 function sceneUpdate(gd, trace) {
-    var scene = trace._scene;
+    var fullLayout = gd._fullLayout;
+    var uid = trace.uid;
 
-    var reset = {
-        dirty: true
-    };
+    // must place ref to 'scene' in fullLayout, so that:
+    // - it can be relinked properly on updates
+    // - it can be destroyed properly when needed
+    var splomScenes = fullLayout._splomScenes;
+    if(!splomScenes) splomScenes = fullLayout._splomScenes = {};
 
     console.log(scene)
 
+    var reset = {dirty: true};
 
     var first = {
         selectBatch: null,
@@ -133,8 +138,10 @@ function sceneUpdate(gd, trace) {
         select: null
     };
 
+    var scene = splomScenes[trace.uid];
+
     if(!scene) {
-        scene = trace._scene = Lib.extendFlat({}, reset, first);
+        scene = splomScenes[uid] = Lib.extendFlat({}, reset, first);
 
         scene.draw = function draw() {
             // draw traces in selection mode
@@ -150,12 +157,9 @@ function sceneUpdate(gd, trace) {
         // remove scene resources
         scene.destroy = function destroy() {
             if(scene.matrix) scene.matrix.destroy();
-
             scene.matrixOptions = null;
             scene.selectBatch = null;
             scene.unselectBatch = null;
-
-            trace._scene = null;
         };
     }
 
@@ -181,7 +185,7 @@ function plotOne(gd, cd0) {
     var gs = fullLayout._size;
     var trace = cd0.trace;
     var stash = cd0.t;
-    var scene = trace._scene;
+    var scene = fullLayout._splomScenes[trace.uid];
     var matrixOpts = scene.matrixOptions;
     var cdata = matrixOpts.cdata;
     var regl = fullLayout._glcanvas.data()[0].regl;
@@ -317,7 +321,7 @@ function editStyle(gd, cd0) {
     console.time('editStyle')
     var trace = cd0.trace;
     var stash = cd0.t;
-    var scene = trace._scene;
+    var scene = gd._fullLayout._splomScenes[trace.uid];
     var matrixOpts = scene.matrixOptions;
     var viewOpts = scene.viewOpts;
 
@@ -340,7 +344,7 @@ function hoverPoints(pointData, xval, yval) {
     var cd = pointData.cd;
     var trace = cd[0].trace;
     var stash = cd[0].t;
-    var scene = trace._scene;
+    var scene = pointData.scene;
     var cdata = scene.matrixOptions.cdata;
     var xa = pointData.xa;
     var ya = pointData.ya;
@@ -386,7 +390,7 @@ function selectPoints(searchInfo, selectionTester) {
     var cd = searchInfo.cd;
     var trace = cd[0].trace;
     var stash = cd[0].t;
-    var scene = trace._scene;
+    var scene = searchInfo.scene;
     var cdata = scene.matrixOptions.cdata;
     var xa = searchInfo.xaxis;
     var ya = searchInfo.yaxis;
@@ -458,7 +462,7 @@ function style(gd, cds) {
 
     var fullLayout = gd._fullLayout;
     var cd0 = cds[0];
-    var scene0 = cd0[0].trace._scene;
+    var scene0 = fullLayout._splomScenes[cd0[0].trace.uid];
     scene0.matrix.regl.clear({color: true, depth: true});
 
     if(fullLayout._splomGrid) {
@@ -466,7 +470,7 @@ function style(gd, cds) {
     }
 
     for(var i = 0; i < cds.length; i++) {
-        var scene = cds[i][0].trace._scene;
+        var scene = fullLayout._splomScenes[cds[i][0].trace.uid];
         scene.draw();
     }
 

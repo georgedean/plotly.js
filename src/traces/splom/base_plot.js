@@ -47,7 +47,7 @@ function drag(gd) {
     for(var i = 0; i < cd.length; i++) {
         var cd0 = cd[i][0];
         var trace = cd0.trace;
-        var scene = trace._scene;
+        var scene = fullLayout._splomScenes[trace.uid];
 
         if(trace.type === 'splom' && scene && scene.matrix) {
             dragOne(gd, trace, scene);
@@ -171,46 +171,37 @@ function makeGridData(gd) {
     return gridBatches;
 }
 
-function clean(newFullData, newFullLayout, oldFullData, oldFullLayout, oldCalcdata) {
-    var oldModules = oldFullLayout._modules || [];
-    var newModules = newFullLayout._modules || [];
+function clean(newFullData, newFullLayout, oldFullData, oldFullLayout) {
+    oldLoop:
+    for(var i = 0; i < oldFullData.length; i++) {
+        var oldTrace = oldFullData[i];
 
-    var hadSplom, hasSplom;
-    var i;
+        if(oldTrace.type === 'splom') {
+            for(var j = 0; j < newFullData.length; j++) {
+                var newTrace = newFullData[j];
 
-    for(i = 0; i < oldModules.length; i++) {
-        if(oldModules[i].name === 'splom') {
-            hadSplom = true;
-            break;
-        }
-    }
-    for(i = 0; i < newModules.length; i++) {
-        if(newModules[i].name === 'splom') {
-            hasSplom = true;
-            break;
-        }
-    }
+                if(oldTrace.uid === newTrace.uid && newTrace.type === 'splom') {
+                    continue oldLoop;
+                }
+            }
 
-    if(hadSplom && !hasSplom) {
-        for(i = 0; i < oldCalcdata.length; i++) {
-            var cd0 = oldCalcdata[i][0];
-            var trace = cd0.trace;
-            var scene = trace._scene;
-
-            if(
-                trace.type === 'splom' &&
-                scene && scene.matrix && scene.matrix.destroy
-            ) {
-                scene.matrix.destroy();
-                trace._scene = null;
+            if(oldFullLayout._splomScenes) {
+                var scene = oldFullLayout._splomScenes[oldTrace.uid];
+                if(scene && scene.destroy) scene.destroy();
+                delete oldFullLayout._splomScenes[oldTrace.uid];
+                console.log('gone', oldTrace.uid, oldFullLayout._splomScenes)
             }
         }
+    }
+
+    if(Object.keys(oldFullLayout._splomScenes || {}).length === 0) {
+        delete oldFullLayout._splomScenes;
     }
 
     if(oldFullLayout._splomGrid &&
         (!newFullLayout._hasOnlyLargeSploms && oldFullLayout._hasOnlyLargeSploms)) {
         oldFullLayout._splomGrid.destroy();
-        oldFullLayout._splomGrid = null;
+        delete oldFullLayout._splomGrid;
     }
 
     Cartesian.clean(newFullData, newFullLayout, oldFullData, oldFullLayout);
@@ -231,7 +222,7 @@ function updateFx(gd) {
             var trace = cd0.trace;
 
             if(trace.type === 'splom') {
-                var scene = trace._scene;
+                var scene = fullLayout._splomScenes[trace.uid];
                 if(scene.selectBatch === null) {
                     scene.matrix.update(scene.matrixOptions, null);
                 }
