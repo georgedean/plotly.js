@@ -422,10 +422,10 @@ describe('Test splom trace calc step:', function() {
             yaxis: {type: 'linear'}
         });
 
-        var cd = gd.calcdata[0][0];
+        var trace = gd._fullData[0];
 
-        expect(cd.t._scene.matrixOptions.data).toBeCloseTo2DArray([[2, 1, 2]]);
-        expect(cd.t.visibleDims).toEqual([1]);
+        expect(trace._scene.matrixOptions.data).toBeCloseTo2DArray([[2, 1, 2]]);
+        expect(trace._visibleDims).toEqual([1]);
         expect(Lib.log).toHaveBeenCalledTimes(1);
         expect(Lib.log).toHaveBeenCalledWith('Skipping splom dimension 0 with conflicting axis types');
     });
@@ -448,13 +448,15 @@ describe('Test splom interactions:', function() {
 
         Plotly.plot(gd, fig).then(function() {
             expect(gd._fullLayout._splomGrid).toBeDefined();
-            expect(gd.calcdata[0][0].t._scene).toBeDefined();
+            expect(gd._fullData[0]._scene).toBeDefined();
+            expect(gd.calcdata[0][0].t._scene).toBeUndefined();
 
             return Plots.cleanPlot([], {}, gd._fullData, gd._fullLayout, gd.calcdata);
         })
         .then(function() {
             expect(gd._fullLayout._splomGrid).toBe(null);
-            expect(gd.calcdata[0][0].t._scene).toBe(null);
+            expect(gd._fullData[0]._scene).toBe(null);
+            expect(gd.calcdata[0][0].t._scene).toBeUndefined();
         })
         .catch(failTest)
         .then(done);
@@ -657,9 +659,10 @@ describe('Test splom interactions:', function() {
     it('@gl should toggle trace correctly', function(done) {
         var fig = Lib.extendDeep({}, require('@mocks/splom_iris.json'));
 
+        // TODO find better a good way to test this!!!
         function _assert(msg, exp) {
             for(var i = 0; i < 3; i++) {
-                expect(Boolean(gd.calcdata[i][0].t._scene))
+                expect(Boolean(gd._fullData[i]._scene))
                     .toBe(Boolean(exp[i]), msg + ' - trace ' + i);
             }
         }
@@ -894,7 +897,7 @@ describe('Test splom drag:', function() {
 
         Plotly.plot(gd, fig)
         .then(function() {
-            var scene = gd.calcdata[0][0].t._scene;
+            var scene = gd._fullData[0]._scene;
             spyOn(scene.matrix, 'update');
             spyOn(scene.matrix, 'draw');
 
@@ -910,7 +913,7 @@ describe('Test splom drag:', function() {
         })
         .then(function() { return _drag([130, 130], [150, 150]); })
         .then(function() {
-            var scene = gd.calcdata[0][0].t._scene;
+            var scene = gd._fullData[0]._scene;
             // N.B. _drag triggers two updateSubplots call
             // - 1 update and 1 draw call per updateSubplot
             // - 1 update calls for data+view opts
@@ -1126,7 +1129,7 @@ describe('Test splom select:', function() {
         }
 
         Plotly.plot(gd, fig).then(function() {
-            scene = gd.calcdata[0][0].t._scene;
+            scene = gd._fullData[0]._scene;
             spyOn(scene.matrix, 'update').and.callThrough();
             spyOn(scene.matrix, 'draw').and.callThrough();
         })

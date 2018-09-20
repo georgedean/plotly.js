@@ -47,18 +47,17 @@ function drag(gd) {
     for(var i = 0; i < cd.length; i++) {
         var cd0 = cd[i][0];
         var trace = cd0.trace;
-        var stash = cd0.t;
-        var scene = stash._scene;
+        var scene = trace._scene;
 
         if(trace.type === 'splom' && scene && scene.matrix) {
-            dragOne(gd, trace, stash, scene);
+            dragOne(gd, trace, scene);
         }
     }
 }
 
-function dragOne(gd, trace, stash, scene) {
+function dragOne(gd, trace, scene) {
     var visibleLength = scene.matrixOptions.data.length;
-    var visibleDims = stash.visibleDims;
+    var visibleDims = trace._visibleDims;
     var ranges = scene.viewOpts.ranges = new Array(visibleLength);
 
     for(var k = 0; k < visibleDims.length; k++) {
@@ -196,14 +195,14 @@ function clean(newFullData, newFullLayout, oldFullData, oldFullLayout, oldCalcda
         for(i = 0; i < oldCalcdata.length; i++) {
             var cd0 = oldCalcdata[i][0];
             var trace = cd0.trace;
-            var scene = cd0.t._scene;
+            var scene = trace._scene;
 
             if(
                 trace.type === 'splom' &&
                 scene && scene.matrix && scene.matrix.destroy
             ) {
                 scene.matrix.destroy();
-                cd0.t._scene = null;
+                trace._scene = null;
             }
         }
     }
@@ -232,7 +231,7 @@ function updateFx(gd) {
             var trace = cd0.trace;
 
             if(trace.type === 'splom') {
-                var scene = cd0.t._scene;
+                var scene = trace._scene;
                 if(scene.selectBatch === null) {
                     scene.matrix.update(scene.matrixOptions, null);
                 }

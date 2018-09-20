@@ -31,14 +31,13 @@ function calc(gd, trace) {
     console.time('calc')
     var dimensions = trace.dimensions;
     var commonLength = trace._length;
-    var stash = {};
     var opts = {};
     // 'c' for calculated, 'l' for linear,
     // only differ here for log axes, pass ldata to createMatrix as 'data'
     var cdata = opts.cdata = [];
     var ldata = opts.data = [];
     // keep track of visible dimensions
-    var visibleDims = stash.visibleDims = [];
+    var visibleDims = trace._visibleDims = [];
     var i, k, dim, xa, ya;
 
     function makeCalcdata(ax, dim) {
@@ -106,7 +105,7 @@ function calc(gd, trace) {
         calcAxisExpansion(gd, trace, xa, ya, cdata[k], cdata[k], ppad);
     }
 
-    var scene = stash._scene = sceneUpdate(gd, stash);
+    var scene = trace._scene = sceneUpdate(gd, trace);
     if(!scene.matrix) scene.matrix = true;
     scene.matrixOptions = opts;
 
@@ -114,14 +113,11 @@ function calc(gd, trace) {
     scene.unselectedOptions = convertMarkerSelection(trace, trace.unselected);
 
     console.timeEnd('calc')
-    return [{x: false, y: false, t: stash, trace: trace}];
+    return [{x: false, y: false, t: {}, trace: trace}];
 }
 
-function sceneUpdate(gd, stash) {
-    // TODO this is always undefined, as stash is cleared in _module.calc !!!
-    //
-    // maybe we should link _scene in fullData instead?
-    var scene = stash._scene;
+function sceneUpdate(gd, trace) {
+    var scene = trace._scene;
 
     var reset = {
         dirty: true
@@ -135,7 +131,7 @@ function sceneUpdate(gd, stash) {
     };
 
     if(!scene) {
-        scene = stash._scene = Lib.extendFlat({}, reset, first);
+        scene = trace._scene = Lib.extendFlat({}, reset, first);
 
         scene.draw = function draw() {
             // draw traces in selection mode
@@ -156,7 +152,7 @@ function sceneUpdate(gd, stash) {
             scene.selectBatch = null;
             scene.unselectBatch = null;
 
-            stash._scene = null;
+            trace._scene = null;
         };
     }
 
@@ -182,7 +178,7 @@ function plotOne(gd, cd0) {
     var gs = fullLayout._size;
     var trace = cd0.trace;
     var stash = cd0.t;
-    var scene = stash._scene;
+    var scene = trace._scene;
     var matrixOpts = scene.matrixOptions;
     var cdata = matrixOpts.cdata;
     var regl = fullLayout._glcanvas.data()[0].regl;
@@ -198,7 +194,7 @@ function plotOne(gd, cd0) {
     matrixOpts.upper = trace.showlowerhalf;
     matrixOpts.diagonal = trace.diagonal.visible;
 
-    var visibleDims = stash.visibleDims;
+    var visibleDims = trace._visibleDims;
     var visibleLength = cdata.length;
     var viewOpts = scene.viewOpts = {};
     viewOpts.ranges = new Array(visibleLength);
@@ -318,7 +314,7 @@ function editStyle(gd, cd0) {
     console.time('editStyle')
     var trace = cd0.trace;
     var stash = cd0.t;
-    var scene = stash._scene;
+    var scene = trace._scene;
     var matrixOpts = scene.matrixOptions;
     var viewOpts = scene.viewOpts;
 
@@ -341,7 +337,7 @@ function hoverPoints(pointData, xval, yval) {
     var cd = pointData.cd;
     var trace = cd[0].trace;
     var stash = cd[0].t;
-    var scene = stash._scene;
+    var scene = trace._scene;
     var cdata = scene.matrixOptions.cdata;
     var xa = pointData.xa;
     var ya = pointData.ya;
@@ -349,8 +345,8 @@ function hoverPoints(pointData, xval, yval) {
     var ypx = ya.c2p(yval);
     var maxDistance = pointData.distance;
 
-    var xi = getDimIndex(trace, stash, xa);
-    var yi = getDimIndex(trace, stash, ya);
+    var xi = getDimIndex(trace, xa);
+    var yi = getDimIndex(trace, ya);
     if(xi === false || yi === false) return [pointData];
 
     var x = cdata[xi];
@@ -387,7 +383,7 @@ function selectPoints(searchInfo, selectionTester) {
     var cd = searchInfo.cd;
     var trace = cd[0].trace;
     var stash = cd[0].t;
-    var scene = stash._scene;
+    var scene = trace._scene;
     var cdata = scene.matrixOptions.cdata;
     var xa = searchInfo.xaxis;
     var ya = searchInfo.yaxis;
@@ -399,8 +395,8 @@ function selectPoints(searchInfo, selectionTester) {
     var hasOnlyLines = (!subTypes.hasMarkers(trace) && !subTypes.hasText(trace));
     if(trace.visible !== true || hasOnlyLines) return selection;
 
-    var xi = getDimIndex(trace, stash, xa);
-    var yi = getDimIndex(trace, stash, ya);
+    var xi = getDimIndex(trace, xa);
+    var yi = getDimIndex(trace, ya);
     if(xi === false || yi === false) return selection;
 
     var xpx = stash.xpx[xi];
@@ -459,7 +455,7 @@ function style(gd, cds) {
 
     var fullLayout = gd._fullLayout;
     var cd0 = cds[0];
-    var scene0 = cd0[0].t._scene;
+    var scene0 = cd0[0].trace._scene;
     scene0.matrix.regl.clear({color: true, depth: true});
 
     if(fullLayout._splomGrid) {
@@ -467,7 +463,7 @@ function style(gd, cds) {
     }
 
     for(var i = 0; i < cds.length; i++) {
-        var scene = cds[i][0].t._scene;
+        var scene = cds[i][0].trace._scene;
         scene.draw();
     }
 
@@ -481,11 +477,11 @@ function style(gd, cds) {
     }
 }
 
-function getDimIndex(trace, stash, ax) {
+function getDimIndex(trace, ax) {
     var axId = ax._id;
     var axLetter = axId.charAt(0);
     var ind = {x: 0, y: 1}[axLetter];
-    var visibleDims = stash.visibleDims;
+    var visibleDims = trace._visibleDims;
 
     for(var k = 0; k < visibleDims.length; k++) {
         var i = visibleDims[k];
