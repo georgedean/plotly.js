@@ -38,8 +38,8 @@ function drag(gd) {
     var cd = gd.calcdata;
     var fullLayout = gd._fullLayout;
 
-	// TODO should add showgrid to dimensions[i].axis attributes,
-	// to open-up a way to bypass this
+    // TODO should add showgrid to dimensions[i].axis attributes,
+    // to open-up a way to bypass this
     if(fullLayout._hasOnlyLargeSploms) {
         drawGrid(gd);
     }
@@ -100,7 +100,7 @@ function drawGrid(gd) {
 }
 
 function makeGridData(gd) {
-	console.time('makeGridData')
+    console.time('makeGridData')
     var fullLayout = gd._fullLayout;
     var gs = fullLayout._size;
     var fullView = [0, 0, fullLayout.width, fullLayout.height];
@@ -167,7 +167,7 @@ function makeGridData(gd) {
         gridBatches.push(lookup[k]);
     }
 
-	console.timeEnd('makeGridData')
+    console.timeEnd('makeGridData')
     return gridBatches;
 }
 
