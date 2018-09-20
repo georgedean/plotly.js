@@ -123,6 +123,9 @@ function sceneUpdate(gd, trace) {
         dirty: true
     };
 
+    console.log(scene)
+
+
     var first = {
         selectBatch: null,
         unselectBatch: null,

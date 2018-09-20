@@ -470,8 +470,12 @@ plots.supplyDefaults = function(gd, opts) {
     // clean subplots and other artifacts from previous plot calls
     plots.cleanPlot(newFullData, newFullLayout, oldFullData, oldFullLayout, oldCalcdata);
 
+    console.log('after cleanPlot', newFullLayout._splomScenes, oldFullLayout._splomScenes)
+
     // relink functions and _ attributes to promote consistency between plots
     relinkPrivateKeys(newFullLayout, oldFullLayout);
+
+    console.log('after relink', newFullLayout._splomScenes, oldFullLayout._splomScenes)
 
     // TODO may return a promise
     plots.doAutoMargin(gd);
