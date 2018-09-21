@@ -577,9 +577,8 @@ function _hover(gd, evt, subplot, noHoverEvent) {
 
     gd._hoverdata = newhoverdata;
 
-    // if there's more than one horz bar trace,
-    // rotate the labels so they don't overlap
-    var rotateLabels = hovermode === 'y' && searchData.length > 1;
+    // ...
+    var rotateLabels = hovermode === 'y' && (searchData.length > 1 || hoverData.length > 1);
 
     var bgColor = Color.combine(
         fullLayout.plot_bgcolor || Color.background,
